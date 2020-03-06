@@ -1,11 +1,11 @@
 ## How to Install
-* Install the vim plugin (see below)
-* Install the binary
+1. Install the vim plugin (see below)
+2. Install the binary
 ```bash
 Linux: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time && chmod +x ~/.pluralsight/ps-time
 Mac: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/mac/ps-time && chmod +x ~/.pluralsight/ps-time
 ```
-* In vim run `:PsTimeRegister`
+3. In vim run `:PsTimeRegister`
 
 #### OS Specific s3 links
 * https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/mac/ps-time
