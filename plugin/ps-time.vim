@@ -24,7 +24,7 @@ function! s:SetPaths()
   endif
 
   if g:binary_path == ''
-    let g:binary_path = expand('<sfile>:p:h:h') . '/ps-time'
+    let g:binary_path = g:home . '.pluralsight/ps-time'
 
     if g:is_windows
       let g:binary_path = g:binary_path . '.exe'
@@ -62,6 +62,7 @@ endfunction
 
 function! s:Init()
   call s:SetPaths()
+
   if s:IsRegistered()
     call s:StartPsTime()
   endif
