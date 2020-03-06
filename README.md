@@ -1,3 +1,17 @@
+## How to Install
+* Install the vim plugin (see below)
+* Install the binary
+```bash
+curl -fLo ~/.pluralsight/ps-time --create-dirs <URL FROM BELOW> && chmod +x ~/.pluralsight/ps-time
+```
+* In vim run `:PsTimeRegister`
+
+#### OS Specific s3 links
+* https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/mac/ps-time
+* https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time
+* https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/windows/ps-time.exe
+
+
 #### Vim 8+ packages
 
 If you are using VIM version 8 or higher you can use its built-in package management; see `:help packages` for more information. Just run these commands in your terminal:
