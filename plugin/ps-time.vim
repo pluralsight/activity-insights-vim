@@ -122,11 +122,11 @@ function! s:SavingActivity()
 endfunction
 
 function! PSTIME_RegisterComplete(status, exit_code)
-  " Because this is an exit code, a falsy value means success
-  if a:exit_code
-    echo "There was a problem attempting to register, if the problem persists please contact support"
-  else
+  " Because this is an exit code, 0 means success
+  if a:exit_code == 0
     call s:StartPsTime()
+  else
+    echo "There was a problem attempting to register, if the problem persists please contact support"
   endif
 endfunction
 
