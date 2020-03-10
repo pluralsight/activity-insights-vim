@@ -1,5 +1,11 @@
+let g:is_neovim = has('nvim')
+
 function! s:UnixTimeMs()
-  return float2nr(reltimefloat(reltime()) * 1000)
+  if g:is_neovim
+    return localtime() * 1000
+  else
+    return float2nr(reltimefloat(reltime()) * 1000)
+  endif
 endfunction
 
 let g:last_event_time = s:UnixTimeMs()
