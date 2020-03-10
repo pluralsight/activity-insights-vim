@@ -6,13 +6,21 @@ let g:last_event_time = s:UnixTimeMs()
 let g:cache_bust_delay = 60000
 let g:timer_delay = g:cache_bust_delay - 10
 let g:is_windows = has('win32') || has('win64')
+let g:is_neovim = has('nvim')
 let g:home = fnamemodify('~', ':p')
 let g:isRegistered = 0
 let g:creds_path = ''
 let g:binary_path = ''
 let g:last_file = ''
+let g:editor = ''
 let g:ignore_files = ['MERGE_MSG', 'COMMIT_EDITMSG']
 let g:pulses = []
+
+if g:is_neovim
+  let g:editor = 'Neovim'
+else
+  let g:editor = 'Vim'
+endif
 
 function! s:SetPaths()
   if g:creds_path == ''
@@ -73,10 +81,16 @@ function! s:SendPulses()
     let encoded_pulses = json_encode(g:pulses)
     let g:pulses = []
 
-    let job = job_start([g:binary_path])
-    let channel = job_getchannel(job)
-    call ch_sendraw(channel, encoded_pulses)
-    call ch_close_in(channel)
+    if g:is_neovim
+      let job = jobstart([g:binary_path])
+      call chansend(job, encoded_pulses)
+      call chanclose(job, 'stdin')
+    else
+      let job = job_start([g:binary_path])
+      let channel = job_getchannel(job)
+      call ch_sendraw(channel, encoded_pulses)
+      call ch_close_in(channel)
+    endif
   endif
 endfunction
 
@@ -85,7 +99,7 @@ function! s:ShouldIgnore(file_name)
 endfunction
 
 function! s:CreatePulse(event_date, event_type)
-  return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': 'Vim'}
+  return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': g:editor}
 endfunction
 
 function! s:TypingActivity()
@@ -130,13 +144,21 @@ function! PSTIME_RegisterComplete(status, exit_code)
   endif
 endfunction
 
+function! PSTIME_NVIM_RegisterComplete(job_id, exit_code, event)
+  call PSTIME_RegisterComplete(a:event, a:exit_code)
+endfunction
+
 function! s:Register()
   if s:IsRegistered()
     echo 'Already successfully registered'
     return
   endif
 
-  let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PSTIME_RegisterComplete'})
+  if g:is_neovim
+    let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PSTIME_NVIM_RegisterComplete'})
+  else
+    let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PSTIME_RegisterComplete'})
+  endif
 endfunction
 
 call s:Init()
