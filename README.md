@@ -1,5 +1,10 @@
 ## How to Install
 1. Install the vim plugin (see below)
+   * Depending on how your plugin manager of choice works, you may need to setup a `~/.gitconfig` in the following way so that it can properly clone a private repo.
+   ```bash
+   [url "ssh://git@github.com/"]
+    insteadOf = https://github.com/
+   ```
 2. Install the binary
 ```bash
 Linux: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time && chmod +x ~/.pluralsight/ps-time
