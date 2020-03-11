@@ -120,7 +120,7 @@ function! s:TypingActivity()
   if (current_file != g:last_file) || ((now - g:last_event_time) > g:cache_bust_delay)
     let g:last_event_time = now
     let g:last_file = current_file
-    let pulse = s:CreatePulse(now, 'saveFile')
+    let pulse = s:CreatePulse(now, 'typing')
 
     call add(g:pulses, pulse)
   endif
