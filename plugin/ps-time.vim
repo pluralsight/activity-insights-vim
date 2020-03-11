@@ -89,8 +89,8 @@ function! s:SendPulses()
 
     if g:is_neovim
       let job = jobstart([g:binary_path])
-      call chansend(job, encoded_pulses)
-      call chanclose(job, 'stdin')
+      call jobsend(job, encoded_pulses)
+      call jobclose(job, 'stdin')
     else
       let job = job_start([g:binary_path])
       let channel = job_getchannel(job)
@@ -169,4 +169,4 @@ endfunction
 
 call s:Init()
 
-:command -nargs=0 PsTimeRegister call s:Register()
+:command! -nargs=0 PsTimeRegister call s:Register()
