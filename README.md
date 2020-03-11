@@ -5,6 +5,7 @@
    [url "ssh://git@github.com/"]
     insteadOf = https://github.com/
    ```
+   * You can also run the following from the command line to solve this issue `git config --global --add url."git@github.com:".insteadOf "https://github.com/"`
 2. Install the binary
 ```bash
 Linux: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time && chmod +x ~/.pluralsight/ps-time
