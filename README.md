@@ -11,7 +11,7 @@
 Linux: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time && chmod +x ~/.pluralsight/ps-time
 Mac: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/mac/ps-time && chmod +x ~/.pluralsight/ps-time
 ```
-3. In vim run `:PsTimeRegister`
+3. In vim run `:PluralsightRegister`
 
 #### Vim 8+ packages
 

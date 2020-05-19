@@ -61,24 +61,24 @@ function! s:IsRegistered()
   return 0
 endfunction
 
-function! PSTIME_ProcessPulses(a)
+function! PLURALSIGHT_ProcessPulses(a)
   call s:SendPulses()
 endfunction
 
-function! s:StartPsTime()
-  augroup PsTime
+function! s:StartPluralsight()
+  augroup Pluralsight
     autocmd CursorMoved,CursorMovedI * call s:TypingActivity()
     autocmd BufWritePost * call s:SavingActivity()
   augroup END
 
-  let timer = timer_start(g:timer_delay, 'PSTIME_ProcessPulses', {'repeat': -1})
+  let timer = timer_start(g:timer_delay, 'PLURALSIGHT_ProcessPulses', {'repeat': -1})
 endfunction
 
 function! s:Init()
   call s:SetPaths()
 
   if s:IsRegistered()
-    call s:StartPsTime()
+    call s:StartPluralsight()
   endif
 endfunction
 
@@ -141,17 +141,17 @@ function! s:SavingActivity()
   call add(g:pulses, pulse)
 endfunction
 
-function! PSTIME_RegisterComplete(status, exit_code)
+function! PLURALSIGHT_RegisterComplete(status, exit_code)
   " Because this is an exit code, 0 means success
   if a:exit_code == 0
-    call s:StartPsTime()
+    call s:StartPluralsight()
   else
     echo "There was a problem attempting to register, if the problem persists please contact support"
   endif
 endfunction
 
-function! PSTIME_NVIM_RegisterComplete(job_id, exit_code, event)
-  call PSTIME_RegisterComplete(a:event, a:exit_code)
+function! PLURALSIGHT_NVIM_RegisterComplete(job_id, exit_code, event)
+  call PLURALSIGHT_RegisterComplete(a:event, a:exit_code)
 endfunction
 
 function! s:Register()
@@ -161,12 +161,12 @@ function! s:Register()
   endif
 
   if g:is_neovim
-    let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PSTIME_NVIM_RegisterComplete'})
+    let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PLURALSIGHT_NVIM_RegisterComplete'})
   else
-    let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PSTIME_RegisterComplete'})
+    let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PLURALSIGHT_RegisterComplete'})
   endif
 endfunction
 
 call s:Init()
 
-:command! -nargs=0 PsTimeRegister call s:Register()
+:command! -nargs=0 PluralsightRegister call s:Register()
