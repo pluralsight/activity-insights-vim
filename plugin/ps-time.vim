@@ -167,6 +167,15 @@ function! s:Register()
   endif
 endfunction
 
+function! s:Dashboard()
+  if g:is_neovim
+    let job = jobstart([g:binary_path, 'dashboard'])
+  else
+    let job = job_start([g:binary_path, 'dashboard'])
+  endif
+endfunction
+
 call s:Init()
 
 :command! -nargs=0 PluralsightRegister call s:Register()
+:command! -nargs=0 PluralsightDashboard call s:Dashboard()
