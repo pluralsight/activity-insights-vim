@@ -12,6 +12,9 @@ let g:last_event_time = s:UnixTimeMs()
 let g:cache_bust_delay = 60000
 let g:timer_delay = g:cache_bust_delay - 10
 let g:is_windows = has('win32') || has('win64')
+let g:is_unix = has('unix')
+let g:is_osx = has('macunix')
+let g:is_supported_os = g:is_windows || g:is_unix || g:is_osx
 let g:is_neovim = has('nvim')
 let g:home = fnamemodify('~', ':p')
 let g:isRegistered = 0
@@ -38,7 +41,7 @@ function! s:SetPaths()
   endif
 
   if g:binary_path == ''
-    let g:binary_path = g:home . '.pluralsight/ps-time'
+    let g:binary_path = g:home . '.pluralsight/activity-insights'
 
     if g:is_windows
       let g:binary_path = g:binary_path . '.exe'
@@ -75,10 +78,14 @@ function! s:StartPluralsight()
 endfunction
 
 function! s:Init()
-  call s:SetPaths()
+  if g:is_supported_os
+    call s:SetPaths()
 
-  if s:IsRegistered()
-    call s:StartPluralsight()
+    if s:IsRegistered()
+      call s:StartPluralsight()
+    endif
+  else
+    echo 'This OS is not supported by Pluralsight Activity Insights'
   endif
 endfunction
 
@@ -154,16 +161,55 @@ function! PLURALSIGHT_NVIM_RegisterComplete(job_id, exit_code, event)
   call PLURALSIGHT_RegisterComplete(a:event, a:exit_code)
 endfunction
 
+function! PLURALSIGHT_DownloadComplete(job_id, exit_code)
+  if a:exit_code == 0
+    echo "Successfully downloaded activity insights binary"
+    call s:Register()
+  else
+    echo "There was a problem downloading the activity insights binary, if the problem persists please contact support"
+  endif
+endfunction
+
+function! PLURALSIGHT_NVIM_DownloadComplete(job_id, exit_code, event)
+  call PLURALSIGHT_DownloadComplete(a:event, a:exit_code)
+endfunction
+
+function! s:DownloadBinary()
+  if g:is_osx
+    let l:os = 'mac'
+  elseif g:is_unix
+    let l:os = 'linux'
+  else
+    let l:os = 'windows'
+  endif
+
+  let l:curl = 'curl -fLo ~/.pluralsight/activity-insights --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/' . l:os . '/ps-time && chmod +x ~/.pluralsight/activity-insights'
+
+  let answer = confirm("Download Pluralsight Activity Insights binary with the following command?\n" . l:curl . "\n", "&Yes\n&No", 2)
+
+  if answer == 1
+    execute '!' . l:curl
+    call s:Register()
+  else
+    echo "You can always activate this plugin by running :PluralsightRegister"
+  endif
+endfunction
+
+
 function! s:Register()
   if s:IsRegistered()
     echo 'Already successfully registered'
     return
   endif
 
-  if g:is_neovim
-    let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PLURALSIGHT_NVIM_RegisterComplete'})
+  if filereadable(g:binary_path)
+    if g:is_neovim
+      let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PLURALSIGHT_NVIM_RegisterComplete'})
+    else
+      let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PLURALSIGHT_RegisterComplete'})
+    endif
   else
-    let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PLURALSIGHT_RegisterComplete'})
+    call s:DownloadBinary()
   endif
 endfunction
 
