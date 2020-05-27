@@ -1,24 +1,13 @@
 ## How to Install
-1. Install the vim plugin (see below)
-   * Depending on how your plugin manager of choice works, you may need to setup a `~/.gitconfig` in the following way so that it can properly clone a private repo.
-   ```bash
-   [url "ssh://git@github.com/"]
-    insteadOf = https://github.com/
-   ```
-   * You can also run the following from the command line to solve this issue `git config --global --add url."git@github.com:".insteadOf "https://github.com/"`
-2. Install the binary
-```bash
-Linux: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/linux/ps-time && chmod +x ~/.pluralsight/ps-time
-Mac: curl -fLo ~/.pluralsight/ps-time --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/mac/ps-time && chmod +x ~/.pluralsight/ps-time
-```
-3. In vim run `:PluralsightRegister`
+1. Install the vim plugin (find your plugin manager of choice below)
+2. In vim run `:PluralsightRegister`
 
 #### Vim 8+ packages
 
 If you are using VIM version 8 or higher you can use its built-in package management; see `:help packages` for more information. Just run these commands in your terminal:
 
 ```bash
-git clone https://github.com/ps-dev/ps-time-vim.git ~/.vim/pack/pluralsight/start/ps-time-vim
+git clone https://github.com/pluralsight/activity-insights-vim ~/.vim/pack/pluralsight/start/ps-activity-insights
 ```
 
 Otherwise, these are some of the several 3rd-party plugin managers you can choose from. Be sure you read the instructions for your chosen plugin, as there typically are additional steps you need to take.
@@ -27,7 +16,7 @@ Otherwise, these are some of the several 3rd-party plugin managers you can choos
 
 In the terminal,
 ```bash
-git clone https://github.com/ps-dev/ps-time-vim.git ~/.vim/bundle/ps-time-vim
+git clone https://github.com/pluralsight/activity-insights-vim.git ~/.vim/bundle/ps-activity-insights
 ```
 In your vimrc,
 ```vim
@@ -39,25 +28,25 @@ filetype plugin indent on
 #### [Vundle.vim](https://github.com/VundleVim/Vundle.vim)
 ```vim
 call vundle#begin()
-Plugin 'ps-dev/ps-time-vim'
+Plugin 'pluralsight/activity-insights-vim'
 call vundle#end()
 ```
 
 #### [vim-plug](https://github.com/junegunn/vim-plug)
 ```vim
 call plug#begin()
-Plug 'ps-dev/ps-time-vim'
+Plug 'pluralsight/activity-insights-vim'
 call plug#end()
 ```
 
 #### [dein.vim](https://github.com/Shougo/dein.vim)
 ```vim
 call dein#begin()
-call dein#add('ps-dev/ps-time-vim')
+call dein#add('pluralsight/activity-insights-vim')
 call dein#end()
 ```
 
 #### [apt-vim](https://github.com/egalpin/apt-vim)
 ```bash
-apt-vim install -y https://github.com/ps-dev/ps-time-vim.git
+apt-vim install -y https://github.com/pluralsight/activity-insights-vim.git
 ```
