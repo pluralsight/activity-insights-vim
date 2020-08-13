@@ -1,4 +1,5 @@
 let g:is_neovim = has('nvim')
+let g:TOS_NOT_ACCEPTED_STATUS = 100
 
 function! s:UnixTimeMs()
   if g:is_neovim
@@ -55,7 +56,7 @@ function! s:IsRegistered()
     for line in lines
       let match = split(line, ': ')
 
-      if match[0] == 'api_token'
+      if match[0] == 'api_token' && match[1] != '~'
         return 1
       endif
     endfor
@@ -95,11 +96,11 @@ function! s:SendPulses()
     let g:pulses = []
 
     if g:is_neovim
-      let job = jobstart([g:binary_path])
+      let job = jobstart([g:binary_path], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_NVIM_DashboardCallback'})
       call jobsend(job, encoded_pulses)
       call jobclose(job, 'stdin')
     else
-      let job = job_start([g:binary_path])
+      let job = job_start([g:binary_path], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_DashboardCallback'})
       let channel = job_getchannel(job)
       call ch_sendraw(channel, encoded_pulses)
       call ch_close_in(channel)
@@ -148,10 +149,12 @@ function! s:SavingActivity()
   call add(g:pulses, pulse)
 endfunction
 
-function! PLURALSIGHT_RegisterComplete(status, exit_code)
+function! PLURALSIGHT_RegisterComplete(job, exit_code)
   " Because this is an exit code, 0 means success
   if a:exit_code == 0
     call s:StartPluralsight()
+  elseif a:exit_code == g:TOS_NOT_ACCEPTED_STATUS
+    call s:ShowTOS()
   else
     echo "There was a problem attempting to register, if the problem persists please contact support"
   endif
@@ -206,7 +209,7 @@ function! s:Register()
     if g:is_neovim
       let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PLURALSIGHT_NVIM_RegisterComplete'})
     else
-      let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PLURALSIGHT_RegisterComplete'})
+      let job = job_start([g:binary_path, 'register'], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_RegisterComplete'})
     endif
   else
     call s:DownloadBinary()
@@ -215,13 +218,48 @@ endfunction
 
 function! s:Dashboard()
   if g:is_neovim
-    let job = jobstart([g:binary_path, 'dashboard'])
+    let job = jobstart([g:binary_path, 'dashboard'], {'on_exit':  'PLURALSIGHT_NVIM_DashboardCallback'})
   else
-    let job = job_start([g:binary_path, 'dashboard'])
+    let job = job_start([g:binary_path, 'dashboard'], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_DashboardCallback'})
   endif
 endfunction
 
+function! PLURALSIGHT_NVIM_DashboardCallback(job, exit_code, event)
+  call s:DashboardCallback(a:job, a:exit_code)
+endfunction
+
+function! PLURALSIGHT_DashboardCallback(job, exit_code)
+  if a:exit_code == g:TOS_NOT_ACCEPTED_STATUS
+    call s:ShowTOS()
+  endif
+endfunction
+
+function! s:AcceptTOS()
+  if g:is_neovim
+    let job = jobstart([g:binary_path, 'accept_tos'])
+  else
+    let job = job_start([g:binary_path, 'accept_tos'])
+  endif
+  echo "Term of service accepted! Try running the command again"
+endfunction
+
+function! s:ShowTOS()
+    sbuf tosText
+    let timer = timer_start(200, 'PLURALSIGHT_Confirm_TOS')
+endfunction
+
+function! PLURALSIGHT_Confirm_TOS(arg)
+   let answer = confirm("Do you accept the Pluralsight Terms of Service?\n", "&Yes\n&No", 2)
+   Bclose tosText
+   if answer == 1
+      call s:AcceptTOS()
+   else
+      echo "If you don't accept the Terms of Service, the Pluralsight Activity Insights Extension won't work"
+   endif
+endfunction
+
 call s:Init()
+
 
 :command! -nargs=0 PluralsightRegister call s:Register()
 :command! -nargs=0 PluralsightDashboard call s:Dashboard()
