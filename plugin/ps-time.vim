@@ -114,7 +114,9 @@ function! s:ShouldIgnore(file_name)
 endfunction
 
 function! s:CreatePulse(event_date, event_type)
-  return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': g:editor}
+  if g:timer != v:null
+    return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': g:editor}
+  endif
 endfunction
 
 function! s:TypingActivity()
