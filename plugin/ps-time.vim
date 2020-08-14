@@ -25,6 +25,7 @@ let g:last_file = ''
 let g:editor = ''
 let g:ignore_files = ['MERGE_MSG', 'COMMIT_EDITMSG']
 let g:pulses = []
+let g:timer = v:null
 
 if g:is_neovim
   let g:editor = 'Neovim'
@@ -75,7 +76,7 @@ function! s:StartPluralsight()
     autocmd BufWritePost * call s:SavingActivity()
   augroup END
 
-  let timer = timer_start(g:timer_delay, 'PLURALSIGHT_ProcessPulses', {'repeat': -1})
+  let g:timer = timer_start(g:timer_delay, 'PLURALSIGHT_ProcessPulses', {'repeat': -1})
 endfunction
 
 function! s:Init()
@@ -254,6 +255,9 @@ function! PLURALSIGHT_Confirm_TOS(arg)
    if answer == 1
       call s:AcceptTOS()
    else
+      if g:timer != v:null
+        call timer_stop(g:timer)
+      endif
       echo "If you don't accept the Terms of Service, the Pluralsight Activity Insights Extension won't work"
    endif
 endfunction
