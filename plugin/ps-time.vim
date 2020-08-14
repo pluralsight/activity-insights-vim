@@ -250,7 +250,7 @@ endfunction
 
 function! PLURALSIGHT_Confirm_TOS(arg)
    let answer = confirm("Do you accept the Pluralsight Terms of Service?\n", "&Yes\n&No", 2)
-   bd tosText
+   bw tosText
    if answer == 1
       call s:AcceptTOS()
    else
