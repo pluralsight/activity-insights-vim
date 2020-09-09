@@ -26,6 +26,7 @@ let g:editor = ''
 let g:ignore_files = ['MERGE_MSG', 'COMMIT_EDITMSG']
 let g:pulses = []
 let g:timer = v:null
+let g:latest_command = ''
 
 if g:is_neovim
   let g:editor = 'Neovim'
@@ -92,6 +93,7 @@ function! s:Init()
 endfunction
 
 function! s:SendPulses()
+  let g:latest_command = "pulse"
   if len(g:pulses)
     let encoded_pulses = json_encode(g:pulses)
     let g:pulses = []
@@ -189,7 +191,7 @@ function! s:DownloadBinary()
     let l:os = 'windows'
   endif
 
-  let l:curl = 'curl -fLo ~/.pluralsight/activity-insights --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/' . l:os . '/ps-time && chmod +x ~/.pluralsight/activity-insights'
+  let l:curl = 'curl -fLo ~/.pluralsight/activity-insights --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/' . l:os . '/activity-insights-latest && chmod +x ~/.pluralsight/activity-insights'
 
   let answer = confirm("Download Pluralsight Activity Insights binary with the following command?\n" . l:curl . "\n", "&Yes\n&No", 2)
 
@@ -203,6 +205,7 @@ endfunction
 
 
 function! s:Register()
+  let g:latest_command = "register"
   if s:IsRegistered()
     echo 'Already successfully registered'
     return
@@ -220,6 +223,7 @@ function! s:Register()
 endfunction
 
 function! s:Dashboard()
+  let g:latest_command = "dashboard"
   if g:is_neovim
     let job = jobstart([g:binary_path, 'dashboard'], {'on_exit':  'PLURALSIGHT_NVIM_DashboardCallback'})
   else
@@ -243,11 +247,23 @@ function! s:AcceptTOS()
   else
     let job = job_start([g:binary_path, 'accept_tos'])
   endif
-  echo "Term of service accepted! Try running the command again"
+  echo "Term of service accepted!"
+  call s:StartPluralsight()
+  if g:latest_command == 'register'
+    call s:Register()
+  elseif g:latest_command == 'dashboard'
+    call s:Dashboard()
+  endif
 endfunction
 
 function! s:ShowTOS()
-    sbuf tosText
+    vnew tosText
+    " Add two new lines to the beginning of the tos text buffer. Without it,
+    " the tos text will be hidden when the confirm dialog takes focus
+    call append(0, ["", ""])
+    setlocal buftype=nofile
+    setlocal bufhidden=hide
+    setlocal noswapfile
     let timer = timer_start(200, 'PLURALSIGHT_Confirm_TOS')
 endfunction
 
