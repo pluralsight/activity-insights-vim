@@ -1,4 +1,5 @@
 let g:is_neovim = has('nvim')
+let g:TOS_NOT_ACCEPTED_STATUS = 100
 
 function! s:UnixTimeMs()
   if g:is_neovim
@@ -24,6 +25,8 @@ let g:last_file = ''
 let g:editor = ''
 let g:ignore_files = ['MERGE_MSG', 'COMMIT_EDITMSG']
 let g:pulses = []
+let g:timer = v:null
+let g:latest_command = ''
 
 if g:is_neovim
   let g:editor = 'Neovim'
@@ -55,7 +58,7 @@ function! s:IsRegistered()
     for line in lines
       let match = split(line, ': ')
 
-      if match[0] == 'api_token'
+      if match[0] == 'api_token' && match[1] != '~'
         return 1
       endif
     endfor
@@ -74,7 +77,7 @@ function! s:StartPluralsight()
     autocmd BufWritePost * call s:SavingActivity()
   augroup END
 
-  let timer = timer_start(g:timer_delay, 'PLURALSIGHT_ProcessPulses', {'repeat': -1})
+  let g:timer = timer_start(g:timer_delay, 'PLURALSIGHT_ProcessPulses', {'repeat': -1})
 endfunction
 
 function! s:Init()
@@ -90,16 +93,17 @@ function! s:Init()
 endfunction
 
 function! s:SendPulses()
+  let g:latest_command = "pulse"
   if len(g:pulses)
     let encoded_pulses = json_encode(g:pulses)
     let g:pulses = []
 
     if g:is_neovim
-      let job = jobstart([g:binary_path])
+      let job = jobstart([g:binary_path], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_NVIM_DashboardCallback'})
       call jobsend(job, encoded_pulses)
       call jobclose(job, 'stdin')
     else
-      let job = job_start([g:binary_path])
+      let job = job_start([g:binary_path], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_DashboardCallback'})
       let channel = job_getchannel(job)
       call ch_sendraw(channel, encoded_pulses)
       call ch_close_in(channel)
@@ -112,7 +116,9 @@ function! s:ShouldIgnore(file_name)
 endfunction
 
 function! s:CreatePulse(event_date, event_type)
-  return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': g:editor}
+  if g:timer != v:null
+    return { 'filePath': g:last_file, 'eventType': a:event_type, 'eventDate': a:event_date, 'editor': g:editor}
+  endif
 endfunction
 
 function! s:TypingActivity()
@@ -148,10 +154,12 @@ function! s:SavingActivity()
   call add(g:pulses, pulse)
 endfunction
 
-function! PLURALSIGHT_RegisterComplete(status, exit_code)
+function! PLURALSIGHT_RegisterComplete(job, exit_code)
   " Because this is an exit code, 0 means success
   if a:exit_code == 0
     call s:StartPluralsight()
+  elseif a:exit_code == g:TOS_NOT_ACCEPTED_STATUS
+    call s:ShowTOS()
   else
     echo "There was a problem attempting to register, if the problem persists please contact support"
   endif
@@ -183,7 +191,7 @@ function! s:DownloadBinary()
     let l:os = 'windows'
   endif
 
-  let l:curl = 'curl -fLo ~/.pluralsight/activity-insights --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/' . l:os . '/ps-time && chmod +x ~/.pluralsight/activity-insights'
+  let l:curl = 'curl -fLo ~/.pluralsight/activity-insights --create-dirs https://ps-cdn.s3-us-west-2.amazonaws.com/learner-workflow/ps-time/' . l:os . '/activity-insights-latest && chmod +x ~/.pluralsight/activity-insights'
 
   let answer = confirm("Download Pluralsight Activity Insights binary with the following command?\n" . l:curl . "\n", "&Yes\n&No", 2)
 
@@ -197,6 +205,7 @@ endfunction
 
 
 function! s:Register()
+  let g:latest_command = "register"
   if s:IsRegistered()
     echo 'Already successfully registered'
     return
@@ -206,7 +215,7 @@ function! s:Register()
     if g:is_neovim
       let job = jobstart([g:binary_path, 'register'], {'on_exit': 'PLURALSIGHT_NVIM_RegisterComplete'})
     else
-      let job = job_start([g:binary_path, 'register'], {'exit_cb': 'PLURALSIGHT_RegisterComplete'})
+      let job = job_start([g:binary_path, 'register'], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_RegisterComplete'})
     endif
   else
     call s:DownloadBinary()
@@ -214,14 +223,65 @@ function! s:Register()
 endfunction
 
 function! s:Dashboard()
+  let g:latest_command = "dashboard"
   if g:is_neovim
-    let job = jobstart([g:binary_path, 'dashboard'])
+    let job = jobstart([g:binary_path, 'dashboard'], {'on_exit':  'PLURALSIGHT_NVIM_DashboardCallback'})
   else
-    let job = job_start([g:binary_path, 'dashboard'])
+    let job = job_start([g:binary_path, 'dashboard'], {'out_io': 'buffer', 'out_name': 'tosText', 'exit_cb': 'PLURALSIGHT_DashboardCallback'})
   endif
 endfunction
 
+function! PLURALSIGHT_NVIM_DashboardCallback(job, exit_code, event)
+  call s:DashboardCallback(a:job, a:exit_code)
+endfunction
+
+function! PLURALSIGHT_DashboardCallback(job, exit_code)
+  if a:exit_code == g:TOS_NOT_ACCEPTED_STATUS
+    call s:ShowTOS()
+  endif
+endfunction
+
+function! s:AcceptTOS()
+  if g:is_neovim
+    let job = jobstart([g:binary_path, 'accept_tos'])
+  else
+    let job = job_start([g:binary_path, 'accept_tos'])
+  endif
+  echo "Term of service accepted!"
+  call s:StartPluralsight()
+  if g:latest_command == 'register'
+    call s:Register()
+  elseif g:latest_command == 'dashboard'
+    call s:Dashboard()
+  endif
+endfunction
+
+function! s:ShowTOS()
+    vnew tosText
+    " Add two new lines to the beginning of the tos text buffer. Without it,
+    " the tos text will be hidden when the confirm dialog takes focus
+    call append(0, ["", ""])
+    setlocal buftype=nofile
+    setlocal bufhidden=hide
+    setlocal noswapfile
+    let timer = timer_start(200, 'PLURALSIGHT_Confirm_TOS')
+endfunction
+
+function! PLURALSIGHT_Confirm_TOS(arg)
+   let answer = confirm("Do you accept the Pluralsight Terms of Service?\n", "&Yes\n&No", 2)
+   bw tosText
+   if answer == 1
+      call s:AcceptTOS()
+   else
+      if g:timer != v:null
+        call timer_stop(g:timer)
+      endif
+      echo "If you don't accept the Terms of Service, the Pluralsight Activity Insights Extension won't work"
+   endif
+endfunction
+
 call s:Init()
+
 
 :command! -nargs=0 PluralsightRegister call s:Register()
 :command! -nargs=0 PluralsightDashboard call s:Dashboard()
